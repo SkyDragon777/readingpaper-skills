@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/readingpaper/literature_index.schema.json",
+  "title": "LiteratureIndex",
+  "type": "object",
+  "required": ["schema_version", "created_by", "project_dir", "created_at", "seeds", "papers", "summary", "backend_status"],
+  "properties": {
+    "schema_version": {"const": "readingpaper.literature_index.v1"},
+    "created_by": {"const": "relevantpaper"},
+    "project_dir": {"type": "string"},
+    "created_at": {"type": "string"},
+    "seeds": {"type": "array"},
+    "papers": {"type": "array"},
+    "summary": {"type": "object"},
+    "backend_status": {"type": "object"}
+  }
+}

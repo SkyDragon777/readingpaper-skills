@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/readingpaper/paper_record.schema.json",
+  "title": "PaperRecord",
+  "type": "object",
+  "required": ["paper_id", "title", "authors", "relations_to_seed", "scores", "provenance"],
+  "properties": {
+    "paper_id": {"type": "string"},
+    "title": {"type": "string"},
+    "authors": {"type": "array"},
+    "year": {"type": ["integer", "null"]},
+    "publication_date": {"type": ["string", "null"]},
+    "venue": {"type": "object"},
+    "doi": {"type": ["string", "null"]},
+    "arxiv_id": {"type": ["string", "null"]},
+    "openalex_id": {"type": ["string", "null"]},
+    "semantic_scholar_id": {"type": ["string", "null"]},
+    "abstract": {"type": ["string", "null"]},
+    "citation_count": {"type": "integer"},
+    "is_retracted": {"type": "boolean"},
+    "is_paratext": {"type": "boolean"},
+    "topics": {"type": "array"},
+    "relations_to_seed": {"type": "array"},
+    "open_access": {"type": "object"},
+    "download": {"type": "object"},
+    "scores": {"type": "object"},
+    "ranking_reason": {"type": "string"},
+    "needs_review": {"type": "boolean"},
+    "provenance": {"type": "object"}
+  }
+}

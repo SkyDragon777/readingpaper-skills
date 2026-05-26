@@ -1,0 +1,3 @@
+display_name: Final Paper
+short_description: Analyze academic PDFs and extract structured paper summaries and seed metadata.
+default_prompt: Analyze my academic papers and produce structured summaries and seed metadata for downstream literature discovery.

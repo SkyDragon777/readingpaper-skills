@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/readingpaper/download_manifest.schema.json",
+  "title": "DownloadManifest",
+  "type": "object",
+  "required": ["schema_version", "created_by", "created_at", "downloads"],
+  "properties": {
+    "schema_version": {"const": "readingpaper.download_manifest.v1"},
+    "created_by": {"const": "relevantpaper"},
+    "created_at": {"type": "string"},
+    "downloads": {"type": "array"}
+  }
+}

@@ -1,0 +1,3 @@
+display_name: Relevant Paper
+short_description: Discover, rank, and legally download related papers from seed metadata.
+default_prompt: Find related literature from my seed papers and write a ranked literature index with legal OA downloads.

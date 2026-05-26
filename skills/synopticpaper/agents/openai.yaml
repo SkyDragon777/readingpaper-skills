@@ -1,0 +1,3 @@
+display_name: Synoptic Paper
+short_description: Synthesize finalpaper and relevantpaper outputs into a structured review.
+default_prompt: Synthesize my paper summaries and related-paper index into a literature review, evidence map, gaps, and reading plan.
