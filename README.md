@@ -41,11 +41,13 @@ a. Invoke `finalpaper` to parse all PDF papers in the folder with the MinerU Pre
 
 b. Invoke `relevantpaper` to treat the PDF papers in the folder as seed papers, use OpenAlex API and other public academic data sources to discover, rank, and legally download related open-access papers, and generate a literature index and BibTeX.
 
-c. Invoke `synopticpaper` to run one-click related-literature research from the PDFs already in the folder and finally generate detailed, readable `finalpaper.md` and `finalpaper_cn.md`.
+c. Invoke `synopticpaper` to run one-click related-literature research from the PDFs already in the folder and finally generate detailed, readable `outputs/synopticpaper/finalpaper.md` and `outputs/synopticpaper/finalpaper_cn.md`.
 
-1. Run finalpaper to create `outputs/finalpaper/seed_papers.json`.
-2. Run relevantpaper to create the literature index, BibTeX, download manifest, and legal OA PDFs.
-3. Run synopticpaper to synthesize the seed and related-paper outputs.
+1. Run finalpaper to create seed-only outputs such as `outputs/finalpaper/finalpaper.md` and `outputs/finalpaper/seed_papers.json`.
+2. Run relevantpaper to create `literature_index.json`, `paper_digests.json`, BibTeX, download manifest, and legal OA PDFs.
+3. Run synopticpaper to synthesize seed and related-paper outputs into `outputs/synopticpaper/finalpaper.md` and `outputs/synopticpaper/synoptic_review.md`.
+
+`outputs/finalpaper/finalpaper.md` is the seed-paper reading guide. The integrated related-literature document is `outputs/synopticpaper/finalpaper.md`.
 
 Example:
 

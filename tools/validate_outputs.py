@@ -10,15 +10,18 @@ REQUIRED = {
         "outputs/relevantpaper/literature_index.json",
         "outputs/relevantpaper/literature_index.csv",
         "outputs/relevantpaper/candidate_papers.json",
+        "outputs/relevantpaper/paper_digests.json",
         "outputs/relevantpaper/references.bib",
         "outputs/relevantpaper/download_manifest.json",
         "outputs/relevantpaper/run_report.md",
     ],
     "synopticpaper": [
         "outputs/synopticpaper/synoptic_review.md",
+        "outputs/synopticpaper/finalpaper.md",
         "outputs/synopticpaper/evidence_map.json",
         "outputs/synopticpaper/research_gaps.md",
         "outputs/synopticpaper/reading_plan.md",
+        "outputs/synopticpaper/run_report.md",
     ],
 }
 

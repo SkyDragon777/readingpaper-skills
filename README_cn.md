@@ -41,7 +41,7 @@ a. 调用 `finalpaper`，通过 MinerU Precision API 解析文件夹下所有 PD
 
 b. 调用 `relevantpaper`，把文件夹下的 PDF 论文当作种子论文，通过 OpenAlex API 等公开论文数据源进行种子论文发现、排序并合法下载相关开放获取论文，生成文献索引和 BibTeX。
 
-c. 调用 `synopticpaper`，一键通过文件夹下已有的 PDF 论文进行相关文献调研，最终生成详细且易读的 `finalpaper.md` 和 `finalpaper_cn.md`。
+c. 调用 `synopticpaper`，一键通过文件夹下已有的 PDF 论文进行相关文献调研，最终生成详细且易读的 `outputs/synopticpaper/finalpaper.md` 和 `outputs/synopticpaper/finalpaper_cn.md`。
 
 ### 一键文件夹工作流
 
@@ -57,7 +57,9 @@ python path\to\readingpaper-skills\skills\synopticpaper\scripts\synopticpaper.py
 2. 如果缺少 `outputs/finalpaper/seed_papers.json`，先根据 PDF 文件名和可读元数据生成种子记录。
 3. 调用 `relevantpaper` 脚本检索相关论文、排序、生成 BibTeX 和合法开放获取下载清单。
 4. 生成 `outputs/synopticpaper/` 下的结构化综述、证据图谱、研究空白和阅读计划。
-5. 在项目根目录生成 `finalpaper.md` 和 `finalpaper_cn.md`。
+5. 在 `outputs/synopticpaper/` 下生成综合版 `finalpaper.md` 和 `finalpaper_cn.md`。
+
+`outputs/finalpaper/finalpaper.md` 是种子论文阅读报告，可以只包含原始论文；综合相关文献后的最终文档是 `outputs/synopticpaper/finalpaper.md`。
 
 完整在线检索需要 `OPENALEX_API_KEY`。如果没有该变量，脚本会明确失败，而不会假装已经完成检索。
 

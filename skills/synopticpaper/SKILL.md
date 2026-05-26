@@ -1,6 +1,6 @@
 ---
 name: synopticpaper
-description: Run the end-to-end readingpaper workflow from a folder of PDFs or existing finalpaper/relevantpaper outputs, using file-based handoffs to produce bilingual finalpaper.md/finalpaper_cn.md, a structured literature review, evidence map, research gap analysis, and reading plan.
+description: Run the end-to-end readingpaper workflow from a folder of PDFs or existing finalpaper/relevantpaper outputs, using file-based handoffs to produce integrated outputs/synopticpaper/finalpaper.md, finalpaper_cn.md, a structured literature review, evidence map, research gap analysis, and reading plan.
 ---
 
 # Synoptic Paper
@@ -13,7 +13,7 @@ Synthesize outputs from finalpaper and relevantpaper into a coherent scholarly r
 2. Create `outputs/finalpaper/seed_papers.json` if it is missing.
 3. Run the relevantpaper script with that seed file to create `outputs/relevantpaper/`.
 4. Synthesize those files into `outputs/synopticpaper/`.
-5. Write user-facing `finalpaper.md` and `finalpaper_cn.md`.
+5. Write integrated `outputs/synopticpaper/finalpaper.md` and `outputs/synopticpaper/finalpaper_cn.md`.
 
 This is script/file orchestration, not direct Skill-to-Skill invocation.
 
@@ -25,6 +25,7 @@ Read, when available:
 - `outputs/finalpaper/paper_claims.json`
 - `outputs/finalpaper/paper_summary.md`
 - `outputs/relevantpaper/literature_index.json`
+- `outputs/relevantpaper/paper_digests.json`
 - `outputs/relevantpaper/references.bib`
 - `outputs/relevantpaper/download_manifest.json`
 
@@ -32,18 +33,21 @@ Read, when available:
 
 Write:
 
-- `finalpaper.md`
-- `finalpaper_cn.md`
+- `outputs/synopticpaper/finalpaper.md`
+- `outputs/synopticpaper/finalpaper_cn.md`
 - `outputs/synopticpaper/synoptic_review.md`
 - `outputs/synopticpaper/evidence_map.json`
 - `outputs/synopticpaper/research_gaps.md`
 - `outputs/synopticpaper/reading_plan.md`
+- `outputs/synopticpaper/run_report.md`
 
 ## Rules
 
 - For one-folder PDF workflows, call `skills/relevantpaper/scripts/relevantpaper.py` to perform external search/download through file-based schemas.
 - For synthesis-only workflows, do not perform external search or download PDFs.
 - Use `literature_index.json` as the authoritative related-paper input.
+- Use `paper_digests.json` when present; otherwise build fallback metadata digests from `literature_index.json`.
+- Do not overwrite `outputs/finalpaper/finalpaper.md`.
 - Preserve uncertainty and manual_review flags.
 - Distinguish seed papers, foundational works, later works, related works, and semantic matches.
 - Cite papers using DOI, title, year, and BibTeX key where possible.
@@ -62,6 +66,8 @@ Synthesis only, requiring existing `outputs/finalpaper/seed_papers.json` and `ou
 ```bash
 python skills/synopticpaper/scripts/synopticpaper.py --project-dir . --synthesis-only
 ```
+
+By default `synopticpaper` requires `outputs/relevantpaper/literature_index.json`. Pass `--allow-missing-relevantpaper` only when you intentionally want seed-only output with a warning.
 
 `synoptic_review.md` structure:
 

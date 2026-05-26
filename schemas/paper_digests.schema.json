@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/readingpaper/paper_digests.schema.json",
+  "title": "PaperDigests",
+  "type": "object",
+  "required": ["schema_version", "created_by", "created_at", "digests"],
+  "properties": {
+    "schema_version": {"const": "readingpaper.paper_digests.v1"},
+    "created_by": {"type": "string"},
+    "created_at": {"type": "string"},
+    "digests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["paper_id", "title", "relation_to_seed", "relevance_score", "digest_status", "pdf_parse_status"],
+        "properties": {
+          "paper_id": {"type": "string"},
+          "title": {"type": "string"},
+          "year": {"type": ["integer", "null"]},
+          "doi": {"type": ["string", "null"]},
+          "relation_to_seed": {"type": "array", "items": {"type": "string"}},
+          "relevance_score": {"type": "number"},
+          "digest_status": {"enum": ["metadata_digest", "pdf_digest"]},
+          "pdf_parse_status": {"enum": ["not_downloaded", "downloaded_not_parsed", "parsed", "parse_failed"]},
+          "abstract": {"type": ["string", "null"]},
+          "summary": {"type": ["string", "null"]},
+          "contributions": {"type": "array"},
+          "methods": {"type": "array"},
+          "datasets": {"type": "array"},
+          "findings": {"type": "array"},
+          "limitations": {"type": "array"},
+          "why_it_matters_for_seed": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}

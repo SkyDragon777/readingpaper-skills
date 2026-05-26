@@ -38,6 +38,7 @@ Normalize all inputs to the shared `SeedPaperRecord` schema described in `refere
 - `outputs/relevantpaper/literature_index.json`
 - `outputs/relevantpaper/literature_index.csv`
 - `outputs/relevantpaper/candidate_papers.json`
+- `outputs/relevantpaper/paper_digests.json`
 - `outputs/relevantpaper/references.bib`
 - `outputs/relevantpaper/download_manifest.json`
 - `outputs/relevantpaper/run_report.md`
@@ -64,3 +65,4 @@ Never use piracy sources, paywall bypassing, shared credentials, browser cookies
 - Mark ambiguous matches as `needs_review`.
 - Do not let a low-confidence title match override DOI-based metadata.
 - Write a run report summarizing seed resolution, candidates, downloads, failures, and manual review items.
+- Write metadata-based `paper_digests.json` for synopticpaper even when PDFs were not downloaded or parsed.
