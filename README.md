@@ -1,6 +1,8 @@
 # readingpaper-skills
 
-A suite of ChatGPT Skills for reading academic papers, discovering related literature, downloading legal open-access PDFs, and synthesizing literature reviews.
+[中文](README_cn.md) | English
+
+A suite of Agent Skills for reading academic papers, discovering related literature, downloading legal open-access PDFs, and synthesizing literature reviews.
 
 ## Skills
 

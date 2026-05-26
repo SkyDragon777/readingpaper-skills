@@ -1,6 +1,8 @@
 # readingpaper-skills
 
-`readingpaper-skills` 是一组用于论文阅读、相关文献发现、合法开放获取 PDF 下载和综述综合的 ChatGPT Skills。
+中文 | [English](README.md)
+
+`readingpaper-skills` 是一组用于论文阅读、相关文献发现、合法开放获取 PDF 下载和综述综合的 Agent Skills。
 
 ## Skills
 
