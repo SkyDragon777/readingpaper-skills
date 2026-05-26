@@ -33,6 +33,16 @@ python -m pip install -e ".[dev]"
 
 ## 典型工作流
 
+### Agent工作流
+
+使用 codex 或 opencode 安装 `readingpaper-skills`：
+
+a. 调用 `finalpaper`，通过 MinerU Precision API 解析文件夹下所有 PDF 论文，生成包含作者背景、概念解释和内嵌逐图分析的双语阅读指南。
+
+b. 调用 `relevantpaper`，把文件夹下的 PDF 论文当作种子论文，通过 OpenAlex API 等公开论文数据源进行种子论文发现、排序并合法下载相关开放获取论文，生成文献索引和 BibTeX。
+
+c. 调用 `synopticpaper`，一键通过文件夹下已有的 PDF 论文进行相关文献调研，最终生成详细且易读的 `finalpaper.md` 和 `finalpaper_cn.md`。
+
 ### 一键文件夹工作流
 
 在包含 PDF 的项目文件夹中运行：
