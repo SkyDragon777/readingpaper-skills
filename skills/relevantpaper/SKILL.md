@@ -31,7 +31,8 @@ Normalize all inputs to the shared `SeedPaperRecord` schema described in `refere
 7. Deduplicate candidates.
 8. Score and rank candidates using `references/ranking-rubric.md`.
 9. Download only legally available open-access PDFs according to `references/download-policy.md`.
-10. Write all outputs under `outputs/relevantpaper/`.
+10. Parse selected downloaded relevant PDFs with MinerU full parsing when `MINERU_API_TOKEN` is available.
+11. Write all outputs under `outputs/relevantpaper/` and MinerU parse stores under `mineru/relevant/`.
 
 ## Required outputs
 
@@ -41,6 +42,7 @@ Normalize all inputs to the shared `SeedPaperRecord` schema described in `refere
 - `outputs/relevantpaper/paper_digests.json`
 - `outputs/relevantpaper/references.bib`
 - `outputs/relevantpaper/download_manifest.json`
+- `outputs/relevantpaper/parsed_papers.json`
 - `outputs/relevantpaper/run_report.md`
 - `outputs/relevantpaper/papers/`
 
@@ -66,3 +68,4 @@ Never use piracy sources, paywall bypassing, shared credentials, browser cookies
 - Do not let a low-confidence title match override DOI-based metadata.
 - Write a run report summarizing seed resolution, candidates, downloads, failures, and manual review items.
 - Write metadata-based `paper_digests.json` for synopticpaper even when PDFs were not downloaded or parsed.
+- When relevant PDFs are selected and parsed by MinerU, write `pdf_digest` entries with `mineru` references. Metadata digests are fallback/debug context only.

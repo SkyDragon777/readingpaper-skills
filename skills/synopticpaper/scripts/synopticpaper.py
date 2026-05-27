@@ -61,6 +61,15 @@ class SynopticInputs:
     fallback_metadata_digests: bool = False
 
 
+@dataclass
+class DeepReadingInputs:
+    synoptic: SynopticInputs
+    seed_sources: list[dict[str, Any]]
+    relevant_sources: list[dict[str, Any]]
+    author_profiles: dict[str, Any]
+    supporting_papers: dict[str, Any]
+
+
 def normalize_title(record: dict[str, Any]) -> str:
     return str(record.get("title") or record.get("display_name") or "Untitled paper")
 
@@ -259,6 +268,93 @@ def select_top_relevant_digests(inputs: SynopticInputs, top_k: int = 20) -> list
     return digests[:top_k]
 
 
+def load_reading_guide_sources(project_dir: Path, category: str) -> list[dict[str, Any]]:
+    root = project_dir / "mineru" / category
+    if not root.exists():
+        return []
+    sources = []
+    for path in sorted(root.glob("*/reading_guide_source.json")):
+        try:
+            sources.append(read_json(path, required=True))
+        except Exception:
+            continue
+    return sources
+
+
+def build_author_profiles(seed_sources: list[dict[str, Any]], out_dir: Path) -> dict[str, Any]:
+    profiles = []
+    seen: set[str] = set()
+    for source in seed_sources:
+        for author in source.get("authors") or []:
+            name = author.get("name") if isinstance(author, dict) else str(author)
+            if not name or name in seen:
+                continue
+            seen.add(name)
+            profiles.append({
+                "name": name,
+                "paper_affiliation": author.get("affiliation") if isinstance(author, dict) else None,
+                "current_or_known_affiliation": None,
+                "research_areas": [],
+                "notable_works": [],
+                "source_urls": [],
+                "confidence": "low",
+                "notes": "未找到可验证来源。",
+            })
+    if not profiles:
+        profiles.append({
+            "name": "Unknown author",
+            "paper_affiliation": None,
+            "current_or_known_affiliation": None,
+            "research_areas": [],
+            "notable_works": [],
+            "source_urls": [],
+            "confidence": "low",
+            "notes": "未找到可验证来源。",
+        })
+    data = {"schema_version": "readingpaper.author_profiles.v1", "authors": profiles}
+    write_json(out_dir / "author_profiles.json", data)
+    return data
+
+
+def select_supporting_papers_for_reading_guide(selected: list[dict[str, Any]], out_dir: Path) -> dict[str, Any]:
+    supporting = []
+    for digest in selected[:8]:
+        relations = digest.get("relation_to_seed") or []
+        role = digest.get("role_for_reading_guide")
+        if not role:
+            if "referenced_by_seed" in relations:
+                role = "foundational_for_seed"
+            elif "semantic_match" in relations or "related_to_seed" in relations:
+                role = "explains_core_concept"
+            elif "cites_seed" in relations:
+                role = "direct_successor"
+            else:
+                role = "low_priority_citing_paper"
+        supporting.append({
+            "paper_id": digest.get("paper_id"),
+            "title": normalize_title(digest),
+            "role": role,
+            "reason_for_inclusion": digest.get("why_it_matters_for_seed") or digest.get("summary") or "Selected from relevantpaper ranking.",
+            "used_in_sections": ["历史背景", "学术圈与影响分析"],
+            "mineru_parsed": digest.get("pdf_parse_status") == "parsed",
+        })
+    data = {"supporting_papers": supporting}
+    write_json(out_dir / "supporting_papers.json", data)
+    return data
+
+
+def load_deep_reading_inputs(project_dir: Path, inputs: SynopticInputs, selected: list[dict[str, Any]]) -> DeepReadingInputs:
+    seed_sources = load_reading_guide_sources(project_dir, "seed")
+    if not seed_sources:
+        raise FileNotFoundError("MINERU_API_TOKEN is required to generate finalpaper-style deep reading guides. No mineru/seed/*/reading_guide_source.json was found.")
+    relevant_sources = load_reading_guide_sources(project_dir, "relevant")
+    out_dir = project_dir / "outputs" / "synopticpaper"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    author_profiles = build_author_profiles(seed_sources, out_dir)
+    supporting_papers = select_supporting_papers_for_reading_guide(selected, out_dir)
+    return DeepReadingInputs(inputs, seed_sources, relevant_sources, author_profiles, supporting_papers)
+
+
 def count_downloaded(inputs: SynopticInputs) -> int:
     downloads = (inputs.download_manifest or {}).get("downloads") or []
     return sum(1 for item in downloads if item.get("download_status") == "downloaded")
@@ -330,11 +426,11 @@ def relevant_digest_lines(selected: list[dict[str, Any]]) -> list[str]:
     return lines
 
 
-def build_synoptic_review(inputs: SynopticInputs, selected: list[dict[str, Any]], coverage: dict[str, int]) -> list[str]:
+def build_literature_index_report(inputs: SynopticInputs, selected: list[dict[str, Any]], coverage: dict[str, int]) -> list[str]:
     bibliography = (inputs.references_bib or "").strip()
     gaps = build_gaps(selected)
     return [
-        "# Synoptic Literature Review",
+        "# Literature Index Report",
         "",
         *coverage_lines(coverage),
         *warning_lines(inputs.warnings),
@@ -445,6 +541,179 @@ def build_finalpaper_cn(inputs: SynopticInputs, selected: list[dict[str, Any]], 
     return lines
 
 
+def image_rel(path: str | None) -> str | None:
+    if not path:
+        return None
+    return "../../" + path.replace("\\", "/")
+
+
+def section_snippet(source: dict[str, Any], limit: int = 900) -> str:
+    sections = source.get("sections") or []
+    text = "\n\n".join(str(section.get("text") or "") for section in sections[:3]).strip()
+    return text[:limit] if text else "No parsed section text available."
+
+
+def figure_lines(figures: list[dict[str, Any]], english: bool) -> list[str]:
+    if not figures:
+        return ["No figures were detected in MinerU output." if english else "MinerU 输出中未检测到图。"]
+    lines: list[str] = []
+    for figure in figures:
+        path = image_rel(figure.get("image_path"))
+        figure_id = figure.get("figure_id") or "figure"
+        caption = figure.get("caption") or "No caption"
+        if path:
+            lines.append(f"![{figure_id}: {caption}]({path})")
+        lines.extend([
+            "",
+            f"### {figure_id}",
+            "",
+            f"Original caption: {caption}" if english else f"原始图注：{caption}",
+            "What it shows: interpreted from the MinerU caption and nearby parsed text." if english else "图中展示内容：根据 MinerU 图注和相邻正文解释。",
+            "Why it matters: use this figure to connect the paper's method and claims." if english else "为什么重要：这幅图用于连接论文方法与核心主张。",
+            "",
+        ])
+    return lines
+
+
+def supporting_context(supporting: list[dict[str, Any]]) -> str:
+    if not supporting:
+        return "No supporting relevant papers were selected."
+    return " ".join(f"{paper.get('title')} is used as {paper.get('role')} because {paper.get('reason_for_inclusion')}" for paper in supporting[:6])
+
+
+def build_deep_finalpaper(deep: DeepReadingInputs, coverage: dict[str, int]) -> list[str]:
+    source = deep.seed_sources[0]
+    title = source.get("title") or "Untitled Paper"
+    figures = source.get("figures") or []
+    tables = source.get("tables") or []
+    equations = source.get("equations") or []
+    supporting = deep.supporting_papers.get("supporting_papers") or []
+    return [
+        f"# {title} Reading Guide",
+        "",
+        *coverage_lines(coverage),
+        "## Author Profiles with Verifiable Sources",
+        "",
+        *[f"- **{author['name']}**: {author.get('paper_affiliation') or 'Affiliation unavailable'}. Sources: {', '.join(author.get('source_urls') or []) or 'No verifiable source found.'} Confidence: {author.get('confidence')}." for author in deep.author_profiles.get("authors", [])],
+        "",
+        "## Paper Overview",
+        "",
+        section_snippet(source),
+        "",
+        "## Key Terms",
+        "",
+        *[f"- **{term}**: Core term detected from MinerU full text; interpret it in the context of the parsed paper and supporting literature." for term in (source.get("keywords") or ["method", "model", "evaluation"])],
+        "",
+        "## Deep Concept Explanations",
+        "",
+        "This guide is composed from MinerU `full.md`, parsed sections, formulas, tables, and figures. Relevant papers provide context for concepts, history, and field impact; they are not dumped as metadata.",
+        "",
+        "## Method Reconstruction",
+        "",
+        "Reconstruct the method from parsed sections: inputs, model or algorithm structure, objectives, inference process, experiments, and links to supporting papers.",
+        "",
+        "## Equations and Notation",
+        "",
+        *([f"### {eq.get('equation_id')}\n\n{eq.get('latex')}\n\nExplanation: this formula is preserved from MinerU LaTeX and should be interpreted with nearby parsed context." for eq in equations] or ["No equations were detected in MinerU output."]),
+        "",
+        "## Table Walkthrough",
+        "",
+        *([f"### {table.get('table_id')}\n\nCaption: {table.get('caption') or 'No caption'}\n\n{table.get('html') or ''}\n\nExplanation: this table is preserved from MinerU HTML/table output and should be read against the experiment narrative." for table in tables] or ["No tables were detected in MinerU output."]),
+        "",
+        "## Figure-by-Figure Walkthrough",
+        "",
+        *figure_lines(figures, english=True),
+        "",
+        "## Historical Background",
+        "",
+        supporting_context(supporting),
+        "",
+        "## Academic Community and Field Impact",
+        "",
+        "Relevantpaper-selected works explain field context, direct successors, broad influence, and later developments without turning the report into a flat paper list.",
+        "",
+        "## How to Read This Paper",
+        "",
+        "- First pass: read the overview and figures.\n- Second pass: trace method and equations.\n- Third pass: compare against supporting papers.\n- Final pass: revisit tables and limitations.",
+        "",
+        "## References and Sources",
+        "",
+        f"- Seed MinerU source: `{source.get('mineru', {}).get('full_md')}`",
+        *[f"- {paper.get('title')} ({paper.get('role')}): {paper.get('reason_for_inclusion')}" for paper in supporting],
+    ]
+
+
+def build_deep_finalpaper_cn(deep: DeepReadingInputs, coverage: dict[str, int]) -> list[str]:
+    source = deep.seed_sources[0]
+    title = source.get("title") or "Untitled Paper"
+    figures = source.get("figures") or []
+    tables = source.get("tables") or []
+    equations = source.get("equations") or []
+    supporting = deep.supporting_papers.get("supporting_papers") or []
+    return [
+        f"# {title} 阅读指南",
+        "",
+        "## 输入与解析状态",
+        "",
+        f"- 已加载种子论文：{coverage['seed_papers_loaded']}",
+        f"- 已加载相关论文：{coverage['relevant_papers_loaded']}",
+        f"- 已加载相关论文摘要：{coverage['relevant_digests_loaded']}",
+        f"- 图数量：{len(figures)}",
+        f"- 表格数量：{len(tables)}",
+        f"- 公式数量：{len(equations)}",
+        f"- 相关论文全文解析数量：{len(deep.relevant_sources)}",
+        "",
+        "## 作者简介与可验证来源",
+        "",
+        *[f"- **{author['name']}**：{author.get('paper_affiliation') or '论文署名单位未知'}。可验证来源：{', '.join(author.get('source_urls') or []) or '未找到可验证来源。'} 置信度：{author.get('confidence')}。" for author in deep.author_profiles.get("authors", [])],
+        "",
+        "## 文章概览",
+        "",
+        section_snippet(source),
+        "",
+        "## 关键词与术语定义",
+        "",
+        *[f"- **{term}**：从 MinerU 正文中检测到的核心术语；需要结合原文段落、图表和相关论文理解其作用。" for term in (source.get("keywords") or ["方法", "模型", "评估"])],
+        "",
+        "## 深度概念讲解",
+        "",
+        "本节基于 MinerU 的 full.md、结构化段落、公式、表格和图示组织。相关论文只作为解释原论文概念、历史背景和影响分析的支撑语境，不作为平铺列表。",
+        "",
+        "## 方法重构",
+        "",
+        "- 输入：从论文方法部分和图表中识别。\n- 模型/算法结构：结合 MinerU 解析出的章节、公式和图示重构。\n- 训练目标：优先引用公式和实验设置。\n- 推理过程：结合方法说明和图示解释。\n- 实验设计：结合表格和结果段落说明。\n- 与相关论文的联系：使用 supporting_papers.json 中的角色说明。",
+        "",
+        "## 公式与符号说明",
+        "",
+        *([f"### {eq.get('equation_id')}\n\n{eq.get('latex')}\n\n说明：该公式来自 MinerU LaTeX 输出，应结合前后正文解释每个符号和目标函数。" for eq in equations] or ["MinerU 输出中未检测到公式。"]),
+        "",
+        "## 表格解读",
+        "",
+        *([f"### {table.get('table_id')}\n\n图注/表注：{table.get('caption') or '无'}\n\n{table.get('html') or ''}\n\n解读：该表格来自 MinerU HTML/table 输出，应结合实验问题解释指标、对比方法和结论。" for table in tables] or ["MinerU 输出中未检测到表格。"]),
+        "",
+        "## 逐图描述",
+        "",
+        *figure_lines(figures, english=False),
+        "",
+        "## 历史背景",
+        "",
+        supporting_context(supporting),
+        "",
+        "## 学术圈与影响分析",
+        "",
+        "本节使用 relevantpaper 选出的支撑论文分析学术脉络、直接后续工作、广泛影响和争议限制，而不是直接罗列论文元数据。",
+        "",
+        "## 如何阅读这篇论文",
+        "",
+        "- 第一遍：读文章概览和逐图描述。\n- 第二遍：重构方法和公式。\n- 第三遍：结合表格和实验设计理解证据。\n- 第四遍：按 supporting_papers.json 的顺序阅读相关论文。",
+        "",
+        "## 参考文献与来源",
+        "",
+        f"- 种子论文 MinerU 来源：`{source.get('mineru', {}).get('full_md')}`",
+        *[f"- {paper.get('title')}（{paper.get('role')}）：{paper.get('reason_for_inclusion')}" for paper in supporting],
+    ]
+
+
 def build_gaps(selected: list[dict[str, Any]]) -> list[dict[str, Any]]:
     evidence = [str(item.get("paper_id") or normalize_title(item)) for item in selected[:5]]
     return [{
@@ -513,7 +782,32 @@ def write_run_report(path: Path, inputs: SynopticInputs, coverage: dict[str, int
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
-def build_synoptic(project_dir: Path, require_relevantpaper: bool = True, top_k_relevant: int = 20) -> dict[str, Any]:
+def write_composition_prompts(out_dir: Path, deep: DeepReadingInputs) -> list[str]:
+    prompts_dir = out_dir / "prompts"
+    prompts_dir.mkdir(parents=True, exist_ok=True)
+    seed_refs = "\n".join(f"- {source.get('title')}: {source.get('mineru', {}).get('full_md')} / {source.get('mineru', {}).get('content_list_json')}" for source in deep.seed_sources)
+    supporting = "\n".join(f"- {paper.get('title')} ({paper.get('role')}): {paper.get('reason_for_inclusion')}" for paper in deep.supporting_papers.get("supporting_papers", []))
+    common = f"""Use these inputs:
+
+Seed MinerU sources:
+{seed_refs}
+
+Supporting papers:
+{supporting}
+
+Author profiles: outputs/synopticpaper/author_profiles.json
+Supporting paper roles: outputs/synopticpaper/supporting_papers.json
+
+Do not produce a metadata dump. Do not invent author biographies. Use figures, tables, equations, and MinerU provenance. Integrate relevant papers as historical and conceptual context, not as a flat list.
+"""
+    en = "# finalpaper.md composition prompt\n\nWrite a deep English reading guide following `assets/finalpaper_report_template.md`.\n\n" + common
+    cn = "# finalpaper_cn.md composition prompt\n\n撰写一份中文深度阅读指南，结构遵循 `assets/finalpaper_report_template_cn.md`。\n\n" + common
+    (prompts_dir / "finalpaper_prompt.md").write_text(en, encoding="utf-8")
+    (prompts_dir / "finalpaper_cn_prompt.md").write_text(cn, encoding="utf-8")
+    return ["outputs/synopticpaper/prompts/finalpaper_prompt.md", "outputs/synopticpaper/prompts/finalpaper_cn_prompt.md"]
+
+
+def build_synoptic(project_dir: Path, require_relevantpaper: bool = True, top_k_relevant: int = 20, report_mode: str = "deep_reading_guide") -> dict[str, Any]:
     inputs = load_synoptic_inputs(project_dir, require_relevantpaper=require_relevantpaper)
     selected = select_top_relevant_digests(inputs, top_k_relevant)
     coverage = input_coverage(inputs, selected)
@@ -524,23 +818,30 @@ def build_synoptic(project_dir: Path, require_relevantpaper: bool = True, top_k_
     out_dir.mkdir(parents=True, exist_ok=True)
     evidence = build_evidence_map(selected)
     gaps = build_gaps(selected)
-    review = build_synoptic_review(inputs, selected, coverage)
-    finalpaper = build_finalpaper(inputs, selected, coverage)
-    finalpaper_cn = build_finalpaper_cn(inputs, selected, coverage)
+    literature_report = build_literature_index_report(inputs, selected, coverage)
     reading_plan = reading_plan_lines(inputs, selected)
     gaps_md = ["# Research Gaps", "", *[f"- {gap['description']} Evidence: {', '.join(gap['evidence'])}." for gap in gaps], ""]
 
-    outputs = {
-        "finalpaper.md": finalpaper,
-        "finalpaper_cn.md": finalpaper_cn,
-        "synoptic_review.md": review,
+    outputs: dict[str, list[str]] = {
+        "literature_index_report.md": literature_report,
         "research_gaps.md": gaps_md,
         "reading_plan.md": reading_plan,
     }
+    if report_mode == "deep_reading_guide":
+        deep = load_deep_reading_inputs(project_dir, inputs, selected)
+        outputs["finalpaper.md"] = build_deep_finalpaper(deep, coverage)
+        outputs["finalpaper_cn.md"] = build_deep_finalpaper_cn(deep, coverage)
+        outputs["synoptic_review.md"] = build_deep_finalpaper(deep, coverage)
+        prompt_files = write_composition_prompts(out_dir, deep)
+    elif report_mode == "metadata_index_report":
+        outputs["synoptic_review.md"] = literature_report
+        prompt_files = []
+    else:
+        raise ValueError(f"Unknown report mode: {report_mode}")
     for name, lines in outputs.items():
         (out_dir / name).write_text("\n".join(lines).strip() + "\n", encoding="utf-8")
     write_json(out_dir / "evidence_map.json", evidence)
-    output_files = [f"outputs/synopticpaper/{name}" for name in [*outputs.keys(), "evidence_map.json", "run_report.md"]]
+    output_files = [f"outputs/synopticpaper/{name}" for name in [*outputs.keys(), "evidence_map.json", "run_report.md"]] + prompt_files
     write_run_report(out_dir / "run_report.md", inputs, coverage, selected, output_files)
     return evidence
 
@@ -575,7 +876,7 @@ def run_end_to_end(project_dir: Path, args: argparse.Namespace) -> dict[str, Any
     seed_path = bootstrap_seed_papers_from_pdfs(project_dir)
     run_relevantpaper(project_dir, seed_path, args)
     require_relevantpaper = parse_bool(args.require_relevantpaper) and not args.allow_missing_relevantpaper
-    return build_synoptic(project_dir, require_relevantpaper=require_relevantpaper, top_k_relevant=args.top_k_relevant)
+    return build_synoptic(project_dir, require_relevantpaper=require_relevantpaper, top_k_relevant=args.top_k_relevant, report_mode=getattr(args, "report_mode", "deep_reading_guide"))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -587,6 +888,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-candidates", type=int, default=200)
     parser.add_argument("--max-downloads", type=int, default=40)
     parser.add_argument("--top-k-relevant", type=int, default=20)
+    parser.add_argument("--report-mode", choices=["deep_reading_guide", "metadata_index_report"], default="deep_reading_guide")
     parser.add_argument("--require-relevantpaper", default="true")
     parser.add_argument("--allow-missing-relevantpaper", action="store_true")
     args = parser.parse_args(argv)
@@ -594,13 +896,13 @@ def main(argv: list[str] | None = None) -> int:
         project_dir = Path(args.project_dir).resolve()
         require_relevantpaper = parse_bool(args.require_relevantpaper) and not args.allow_missing_relevantpaper
         if args.synthesis_only:
-            build_synoptic(project_dir, require_relevantpaper=require_relevantpaper, top_k_relevant=args.top_k_relevant)
+            build_synoptic(project_dir, require_relevantpaper=require_relevantpaper, top_k_relevant=args.top_k_relevant, report_mode=args.report_mode)
         else:
             run_end_to_end(project_dir, args)
     except Exception as exc:
         print(f"synopticpaper failed: {exc}", file=sys.stderr)
         return 2
-    print(f"Wrote integrated synoptic outputs to {Path(args.project_dir) / 'outputs' / 'synopticpaper'}")
+    print(f"Wrote synopticpaper {args.report_mode} outputs to {Path(args.project_dir) / 'outputs' / 'synopticpaper'}")
     return 0
 
 

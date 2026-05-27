@@ -41,12 +41,25 @@ def normalize_title(record: dict[str, Any]) -> str:
 def pdf_parse_status(record: dict[str, Any], download_by_id: dict[str, dict[str, Any]]) -> str:
     paper_id = record.get("paper_id") or record.get("id")
     manifest = download_by_id.get(str(paper_id), {})
+    parse_status = manifest.get("parse_status")
+    if parse_status:
+        return str(parse_status)
     status = manifest.get("download_status") or (record.get("download") or {}).get("status")
     if status == "downloaded":
         return "downloaded_not_parsed"
     if status in {"failed", "rejected"}:
         return "parse_failed"
     return "not_downloaded"
+
+
+def role_for_reading_guide(relations: list[str]) -> str:
+    if "referenced_by_seed" in relations:
+        return "foundational_for_seed"
+    if "semantic_match" in relations or "related_to_seed" in relations:
+        return "explains_core_concept"
+    if "cites_seed" in relations:
+        return "direct_successor"
+    return "low_priority"
 
 
 def digest_summary(record: dict[str, Any], relations: list[str]) -> str:
@@ -70,15 +83,20 @@ def build_paper_digests(literature_index: dict[str, Any], download_manifest: dic
         relations = normalize_relations(record)
         title = normalize_title(record)
         score = normalize_score(record)
+        parse_status = pdf_parse_status(record, download_by_id)
+        manifest = download_by_id.get(str(record.get("paper_id") or record.get("id")), {})
         digests.append({
             "paper_id": record.get("paper_id") or record.get("id") or title,
+            "paper_slug": (manifest.get("mineru") or {}).get("mineru_dir", "").rstrip("/").split("/")[-1] if manifest.get("mineru") else None,
             "title": title,
             "year": record.get("year"),
             "doi": record.get("doi"),
             "relation_to_seed": relations,
+            "role_for_reading_guide": role_for_reading_guide(relations),
             "relevance_score": score,
-            "digest_status": "metadata_digest",
-            "pdf_parse_status": pdf_parse_status(record, download_by_id),
+            "digest_status": "pdf_digest" if parse_status == "parsed" else "metadata_digest" if parse_status != "parse_failed" else "failed",
+            "pdf_parse_status": parse_status,
+            "mineru": manifest.get("mineru"),
             "abstract": record.get("abstract"),
             "summary": digest_summary(record, relations),
             "contributions": [],
@@ -86,6 +104,9 @@ def build_paper_digests(literature_index: dict[str, Any], download_manifest: dic
             "datasets": [],
             "findings": [],
             "limitations": [],
+            "important_figures": [],
+            "important_tables": [],
+            "important_equations": [],
             "why_it_matters_for_seed": record.get("ranking_reason") or ("Related by " + ", ".join(relations) if relations else "Related paper discovered by metadata search."),
         })
     return {

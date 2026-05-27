@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/readingpaper/author_profiles.schema.json",
+  "title": "AuthorProfiles",
+  "type": "object",
+  "required": ["schema_version", "authors"],
+  "properties": {
+    "schema_version": {"const": "readingpaper.author_profiles.v1"},
+    "authors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "research_areas", "source_urls", "confidence"],
+        "properties": {
+          "name": {"type": "string"},
+          "paper_affiliation": {"type": ["string", "null"]},
+          "current_or_known_affiliation": {"type": ["string", "null"]},
+          "research_areas": {"type": "array"},
+          "notable_works": {"type": "array"},
+          "source_urls": {"type": "array"},
+          "confidence": {"enum": ["high", "medium", "low"]},
+          "notes": {"type": "string"}
+        }
+      }
+    }
+  }
+}

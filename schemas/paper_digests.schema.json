@@ -20,8 +20,10 @@
           "doi": {"type": ["string", "null"]},
           "relation_to_seed": {"type": "array", "items": {"type": "string"}},
           "relevance_score": {"type": "number"},
-          "digest_status": {"enum": ["metadata_digest", "pdf_digest"]},
-          "pdf_parse_status": {"enum": ["not_downloaded", "downloaded_not_parsed", "parsed", "parse_failed"]},
+          "role_for_reading_guide": {"type": ["string", "null"]},
+          "digest_status": {"enum": ["metadata_digest", "pdf_digest", "failed"]},
+          "pdf_parse_status": {"enum": ["not_downloaded", "downloaded_not_parsed", "parsed", "parse_failed", "parse_skipped_by_budget", "parse_skipped_no_token", "parse_skipped_not_selected", "parse_skipped_by_config"]},
+          "mineru": {"type": ["object", "null"]},
           "abstract": {"type": ["string", "null"]},
           "summary": {"type": ["string", "null"]},
           "contributions": {"type": "array"},
@@ -29,7 +31,11 @@
           "datasets": {"type": "array"},
           "findings": {"type": "array"},
           "limitations": {"type": "array"},
-          "why_it_matters_for_seed": {"type": ["string", "null"]}
+          "important_figures": {"type": "array"},
+          "important_tables": {"type": "array"},
+          "important_equations": {"type": "array"},
+          "why_it_matters_for_seed": {"type": ["string", "null"]},
+          "parse_error": {"type": ["string", "null"]}
         }
       }
     }

@@ -30,6 +30,10 @@ python -m pip install -e ".[dev]"
 | CROSSREF_PLUS_API_TOKEN | No | Crossref Metadata Plus | Skip plus pool |
 | RELEVANTPAPER_MAX_CANDIDATES | No | relevantpaper | Default 200 |
 | RELEVANTPAPER_MAX_DOWNLOADS | No | relevantpaper | Default 40 |
+| MINERU_API_TOKEN | Required for deep reports | finalpaper / relevantpaper / synopticpaper | Deep reading-guide mode fails clearly; metadata report can still be written |
+| RELEVANTPAPER_MAX_MINERU_PARSE | No | relevantpaper | Default 8 selected relevant PDFs |
+| RELEVANTPAPER_SKIP_MINERU_FOR_RELEVANT | No | relevantpaper | Default false |
+| MINERU_PARSE_MODE | No | MinerU parsing | Default full; lightweight is not accepted for final deep reports |
 
 ## Typical workflow
 
@@ -41,7 +45,7 @@ a. Invoke `finalpaper` to parse all PDF papers in the folder with the MinerU Pre
 
 b. Invoke `relevantpaper` to treat the PDF papers in the folder as seed papers, use OpenAlex API and other public academic data sources to discover, rank, and legally download related open-access papers, and generate a literature index and BibTeX.
 
-c. Invoke `synopticpaper` to run one-click related-literature research from the PDFs already in the folder and finally generate detailed, readable `outputs/synopticpaper/finalpaper.md` and `outputs/synopticpaper/finalpaper_cn.md`.
+c. Invoke `synopticpaper` to run one-click related-literature research from the PDFs already in the folder and finally generate detailed, readable `outputs/synopticpaper/finalpaper.md` and `outputs/synopticpaper/finalpaper_cn.md` from MinerU full-parse sources.
 
 1. Run finalpaper to create seed-only outputs such as `outputs/finalpaper/finalpaper.md` and `outputs/finalpaper/seed_papers.json`.
 2. Run relevantpaper to create `literature_index.json`, `paper_digests.json`, BibTeX, download manifest, and legal OA PDFs.
@@ -49,11 +53,19 @@ c. Invoke `synopticpaper` to run one-click related-literature research from the 
 
 `outputs/finalpaper/finalpaper.md` is the seed-paper reading guide. The integrated related-literature document is `outputs/synopticpaper/finalpaper.md`.
 
+`outputs/synopticpaper/literature_index_report.md` is a metadata/debug report. It is not the final reading guide.
+
 Example:
 
 ```bash
 python skills/relevantpaper/scripts/relevantpaper.py --project-dir . --seeds outputs/finalpaper/seed_papers.json
 python skills/synopticpaper/scripts/synopticpaper.py --project-dir .
+```
+
+For metadata/debug output only:
+
+```bash
+python skills/synopticpaper/scripts/synopticpaper.py --project-dir . --report-mode metadata_index_report
 ```
 
 ## Safety policy

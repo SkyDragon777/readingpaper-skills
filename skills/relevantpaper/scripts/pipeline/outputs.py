@@ -81,6 +81,7 @@ def write_run_report(path: Path, backend_status: dict[str, Any], summary: dict[s
         "",
         "## Paper Digests",
         f"- Metadata digests written: {summary.get('paper_digest_count', 0)}",
+        f"- MinerU parsed papers: {summary.get('mineru_parsed_count', 0)}",
         "",
         "## Failed Downloads",
         *[f"- {d.get('paper_id')}: {d.get('download_status')} ({d.get('failure_reason')})" for d in failed[:50]],
@@ -101,13 +102,14 @@ def write_run_report(path: Path, backend_status: dict[str, Any], summary: dict[s
     path.write_text("\n".join(text), encoding="utf-8")
 
 
-def write_outputs(output_dir: Path, project_dir: Path, seeds: list[dict[str, Any]], records: list[dict[str, Any]], downloads: list[dict[str, Any]], summary: dict[str, Any], backend_status: dict[str, Any], discovery_counts: dict[str, int], unresolved: list[dict[str, Any]], warnings: list[str]) -> dict[str, Any]:
+def write_outputs(output_dir: Path, project_dir: Path, seeds: list[dict[str, Any]], records: list[dict[str, Any]], downloads: list[dict[str, Any]], summary: dict[str, Any], backend_status: dict[str, Any], discovery_counts: dict[str, int], unresolved: list[dict[str, Any]], warnings: list[str], parsed_papers: list[dict[str, Any]] | None = None) -> dict[str, Any]:
     output_dir.mkdir(parents=True, exist_ok=True)
     manual_review = [r for r in records if r.get("needs_review")]
     index = make_literature_index(project_dir, seeds, records, summary, backend_status)
     manifest = make_download_manifest(downloads)
     paper_digests = build_paper_digests(index, manifest)
     summary["paper_digest_count"] = len(paper_digests.get("digests", []))
+    summary["mineru_parsed_count"] = sum(1 for item in paper_digests.get("digests", []) if item.get("pdf_parse_status") == "parsed")
     index["summary"] = summary
     write_json(output_dir / "candidate_papers.json", records)
     write_json(output_dir / "literature_index.json", index)
@@ -115,5 +117,6 @@ def write_outputs(output_dir: Path, project_dir: Path, seeds: list[dict[str, Any
     (output_dir / "references.bib").write_text(to_bibtex(records), encoding="utf-8")
     write_json(output_dir / "download_manifest.json", manifest)
     write_json(output_dir / "paper_digests.json", paper_digests)
+    write_json(output_dir / "parsed_papers.json", {"schema_version": "readingpaper.parsed_papers.v1", "created_by": "relevantpaper", "created_at": utc_now(), "papers": parsed_papers or []})
     write_run_report(output_dir / "run_report.md", backend_status, summary, discovery_counts, downloads, unresolved, manual_review, warnings)
     return index

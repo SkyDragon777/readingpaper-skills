@@ -30,6 +30,10 @@ python -m pip install -e ".[dev]"
 | `CROSSREF_PLUS_API_TOKEN` | 否 | Crossref Metadata Plus | 不使用 plus pool |
 | `RELEVANTPAPER_MAX_CANDIDATES` | 否 | relevantpaper | 默认 200 |
 | `RELEVANTPAPER_MAX_DOWNLOADS` | 否 | relevantpaper | 默认 40 |
+| `MINERU_API_TOKEN` | 深度报告必需 | finalpaper / relevantpaper / synopticpaper | 深度阅读指南模式会明确失败；metadata 报告仍可生成 |
+| `RELEVANTPAPER_MAX_MINERU_PARSE` | 否 | relevantpaper | 默认解析 8 篇选中的相关 PDF |
+| `RELEVANTPAPER_SKIP_MINERU_FOR_RELEVANT` | 否 | relevantpaper | 默认 false |
+| `MINERU_PARSE_MODE` | 否 | MinerU 解析 | 默认 full；lightweight 不可用于最终深度报告 |
 
 ## 典型工作流
 
@@ -41,7 +45,7 @@ a. 调用 `finalpaper`，通过 MinerU Precision API 解析文件夹下所有 PD
 
 b. 调用 `relevantpaper`，把文件夹下的 PDF 论文当作种子论文，通过 OpenAlex API 等公开论文数据源进行种子论文发现、排序并合法下载相关开放获取论文，生成文献索引和 BibTeX。
 
-c. 调用 `synopticpaper`，一键通过文件夹下已有的 PDF 论文进行相关文献调研，最终生成详细且易读的 `outputs/synopticpaper/finalpaper.md` 和 `outputs/synopticpaper/finalpaper_cn.md`。
+c. 调用 `synopticpaper`，一键通过文件夹下已有的 PDF 论文进行相关文献调研，并基于 MinerU full-parse 来源最终生成详细且易读的 `outputs/synopticpaper/finalpaper.md` 和 `outputs/synopticpaper/finalpaper_cn.md`。
 
 ### 一键文件夹工作流
 
@@ -61,6 +65,8 @@ python path\to\readingpaper-skills\skills\synopticpaper\scripts\synopticpaper.py
 
 `outputs/finalpaper/finalpaper.md` 是种子论文阅读报告，可以只包含原始论文；综合相关文献后的最终文档是 `outputs/synopticpaper/finalpaper.md`。
 
+`outputs/synopticpaper/literature_index_report.md` 是 metadata/debug 报告，不是最终阅读指南。
+
 完整在线检索需要 `OPENALEX_API_KEY`。如果没有该变量，脚本会明确失败，而不会假装已经完成检索。
 
 ### 分步工作流
@@ -68,6 +74,12 @@ python path\to\readingpaper-skills\skills\synopticpaper\scripts\synopticpaper.py
 ```bash
 python skills/relevantpaper/scripts/relevantpaper.py --project-dir . --seeds outputs/finalpaper/seed_papers.json
 python skills/synopticpaper/scripts/synopticpaper.py --project-dir . --synthesis-only
+```
+
+仅生成 metadata/debug 报告：
+
+```bash
+python skills/synopticpaper/scripts/synopticpaper.py --project-dir . --report-mode metadata_index_report
 ```
 
 ## 安全策略

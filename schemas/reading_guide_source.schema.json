@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/readingpaper/reading_guide_source.schema.json",
+  "title": "ReadingGuideSource",
+  "type": "object",
+  "required": ["schema_version", "created_by", "paper_slug", "mineru", "sections", "figures", "tables", "equations"],
+  "properties": {
+    "schema_version": {"const": "readingpaper.reading_guide_source.v1"},
+    "created_by": {"type": "string"},
+    "paper_id": {"type": ["string", "null"]},
+    "paper_slug": {"type": "string"},
+    "title": {"type": ["string", "null"]},
+    "authors": {"type": "array"},
+    "year": {"type": ["integer", "null"]},
+    "doi": {"type": ["string", "null"]},
+    "arxiv_id": {"type": ["string", "null"]},
+    "mineru": {"type": "object"},
+    "sections": {"type": "array"},
+    "figures": {"type": "array"},
+    "tables": {"type": "array"},
+    "equations": {"type": "array"},
+    "keywords": {"type": "array"},
+    "claims": {"type": "array"},
+    "limitations": {"type": "array"},
+    "references": {"type": "array"}
+  }
+}

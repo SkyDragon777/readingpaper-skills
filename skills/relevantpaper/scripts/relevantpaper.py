@@ -18,6 +18,7 @@ from common.schema import seed_envelope, write_json
 from pipeline.dedupe import dedupe_records
 from pipeline.discover import discover_candidates
 from pipeline.download import download_pdfs
+from pipeline.mineru_parse import parse_selected_relevant_papers_with_mineru
 from pipeline.normalize import normalize_records
 from pipeline.outputs import write_outputs
 from pipeline.resolve import resolve_seeds
@@ -109,6 +110,7 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
     discovery_counts = {"backward": 0, "forward": 0, "related": 0, "semantic": 0}
     records: list[dict[str, Any]] = []
     downloads: list[dict[str, Any]] = []
+    parsed_papers: list[dict[str, Any]] = []
     raw_count = 0
     if not args.dry_run:
         client = OpenAlexClient(config.cache_dir, api_key=config.env.get("OPENALEX_API_KEY"), timeout=int(config.data["download"].get("timeout_seconds", 30)))
@@ -126,6 +128,7 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
             timeout=int(config.data["download"]["timeout_seconds"]),
             verify_pdf_header=bool(config.data["download"]["verify_pdf_header"]),
         )
+        parsed_papers = parse_selected_relevant_papers_with_mineru(records, downloads, config.project_dir, config.env)
     else:
         write_json(output_dir / "logs" / "unresolved_seeds.json", [])
     downloaded_count = sum(1 for d in downloads if d.get("download_status") == "downloaded")
@@ -149,6 +152,7 @@ def run_pipeline(args: argparse.Namespace) -> dict[str, Any]:
         discovery_counts,
         unresolved,
         config.warnings,
+        parsed_papers,
     )
 
 

@@ -1,6 +1,6 @@
 ---
 name: synopticpaper
-description: Run the end-to-end readingpaper workflow from a folder of PDFs or existing finalpaper/relevantpaper outputs, using file-based handoffs to produce integrated outputs/synopticpaper/finalpaper.md, finalpaper_cn.md, a structured literature review, evidence map, research gap analysis, and reading plan.
+description: Run the end-to-end readingpaper workflow from a folder of PDFs or existing finalpaper/relevantpaper outputs, using MinerU full-parse sources and file-based handoffs to produce deep outputs/synopticpaper/finalpaper.md, finalpaper_cn.md, a structured literature review, evidence map, research gap analysis, and reading plan.
 ---
 
 # Synoptic Paper
@@ -13,7 +13,8 @@ Synthesize outputs from finalpaper and relevantpaper into a coherent scholarly r
 2. Create `outputs/finalpaper/seed_papers.json` if it is missing.
 3. Run the relevantpaper script with that seed file to create `outputs/relevantpaper/`.
 4. Synthesize those files into `outputs/synopticpaper/`.
-5. Write integrated `outputs/synopticpaper/finalpaper.md` and `outputs/synopticpaper/finalpaper_cn.md`.
+5. Write metadata/debug output to `outputs/synopticpaper/literature_index_report.md`.
+6. Write deep `outputs/synopticpaper/finalpaper.md` and `outputs/synopticpaper/finalpaper_cn.md` only from MinerU full-parse reading-guide sources.
 
 This is script/file orchestration, not direct Skill-to-Skill invocation.
 
@@ -24,10 +25,16 @@ Read, when available:
 - `outputs/finalpaper/seed_papers.json`
 - `outputs/finalpaper/paper_claims.json`
 - `outputs/finalpaper/paper_summary.md`
+- `mineru/seed/<paper-slug>/reading_guide_source.json`
+- `mineru/seed/<paper-slug>/full.md`
+- `mineru/seed/<paper-slug>/*_content_list.json`
+- `mineru/seed/<paper-slug>/images/`
 - `outputs/relevantpaper/literature_index.json`
 - `outputs/relevantpaper/paper_digests.json`
 - `outputs/relevantpaper/references.bib`
 - `outputs/relevantpaper/download_manifest.json`
+- `outputs/relevantpaper/parsed_papers.json`
+- `mineru/relevant/<paper-slug>/reading_guide_source.json`
 
 ## Outputs
 
@@ -35,6 +42,9 @@ Write:
 
 - `outputs/synopticpaper/finalpaper.md`
 - `outputs/synopticpaper/finalpaper_cn.md`
+- `outputs/synopticpaper/literature_index_report.md`
+- `outputs/synopticpaper/author_profiles.json`
+- `outputs/synopticpaper/supporting_papers.json`
 - `outputs/synopticpaper/synoptic_review.md`
 - `outputs/synopticpaper/evidence_map.json`
 - `outputs/synopticpaper/research_gaps.md`
@@ -47,6 +57,8 @@ Write:
 - For synthesis-only workflows, do not perform external search or download PDFs.
 - Use `literature_index.json` as the authoritative related-paper input.
 - Use `paper_digests.json` when present; otherwise build fallback metadata digests from `literature_index.json`.
+- Treat metadata digests as debugging context only. Do not render them directly as `finalpaper.md` or `finalpaper_cn.md`.
+- Deep reading-guide mode requires MinerU full parse sources under `mineru/seed/`.
 - Do not overwrite `outputs/finalpaper/finalpaper.md`.
 - Preserve uncertainty and manual_review flags.
 - Distinguish seed papers, foundational works, later works, related works, and semantic matches.
@@ -68,6 +80,14 @@ python skills/synopticpaper/scripts/synopticpaper.py --project-dir . --synthesis
 ```
 
 By default `synopticpaper` requires `outputs/relevantpaper/literature_index.json`. Pass `--allow-missing-relevantpaper` only when you intentionally want seed-only output with a warning.
+
+Metadata/debug report only:
+
+```bash
+python skills/synopticpaper/scripts/synopticpaper.py --project-dir . --synthesis-only --report-mode metadata_index_report
+```
+
+`deep_reading_guide` mode must not fall back to a metadata dump. If `mineru/seed/*/reading_guide_source.json` is missing, fail clearly and ask the user to run finalpaper MinerU full parsing first.
 
 `synoptic_review.md` structure:
 

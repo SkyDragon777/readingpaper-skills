@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/readingpaper/mineru_parse_manifest.schema.json",
+  "title": "MinerUParseManifest",
+  "type": "object",
+  "required": ["schema_version", "paper_slug", "source_pdf", "category", "parse_status", "mineru_dir", "created_at"],
+  "properties": {
+    "schema_version": {"const": "readingpaper.mineru_parse_manifest.v1"},
+    "paper_id": {"type": ["string", "null"]},
+    "paper_slug": {"type": "string"},
+    "source_pdf": {"type": ["string", "null"]},
+    "category": {"enum": ["seed", "relevant"]},
+    "parse_status": {"enum": ["parsed", "failed", "skipped"]},
+    "mineru_task_id": {"type": ["string", "null"]},
+    "full_zip_url": {"type": ["string", "null"]},
+    "mineru_dir": {"type": "string"},
+    "full_md": {"type": ["string", "null"]},
+    "content_list_json": {"type": ["string", "null"]},
+    "content_list_v2_json": {"type": ["string", "null"]},
+    "middle_json": {"type": ["string", "null"]},
+    "model_json": {"type": ["string", "null"]},
+    "images_dir": {"type": ["string", "null"]},
+    "figure_count": {"type": "integer"},
+    "table_count": {"type": "integer"},
+    "equation_count": {"type": "integer"},
+    "parse_error": {"type": ["string", "null"]},
+    "created_at": {"type": "string"}
+  }
+}

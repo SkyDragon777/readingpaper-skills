@@ -11,6 +11,7 @@ REQUIRED = {
         "outputs/relevantpaper/literature_index.csv",
         "outputs/relevantpaper/candidate_papers.json",
         "outputs/relevantpaper/paper_digests.json",
+        "outputs/relevantpaper/parsed_papers.json",
         "outputs/relevantpaper/references.bib",
         "outputs/relevantpaper/download_manifest.json",
         "outputs/relevantpaper/run_report.md",
@@ -18,6 +19,8 @@ REQUIRED = {
     "synopticpaper": [
         "outputs/synopticpaper/synoptic_review.md",
         "outputs/synopticpaper/finalpaper.md",
+        "outputs/synopticpaper/finalpaper_cn.md",
+        "outputs/synopticpaper/literature_index_report.md",
         "outputs/synopticpaper/evidence_map.json",
         "outputs/synopticpaper/research_gaps.md",
         "outputs/synopticpaper/reading_plan.md",
